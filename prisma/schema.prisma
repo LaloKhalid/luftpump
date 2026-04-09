@@ -1,0 +1,127 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  TECHNICIAN
+}
+
+enum LeadStatus {
+  NEW
+  CONTACTED
+  BOOKED
+  COMPLETED
+  LOST
+}
+
+enum BookingType {
+  CONSULTATION
+  INSTALLATION
+}
+
+enum JobStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  password  String
+  name      String
+  role      Role     @default(ADMIN)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}
+
+model Lead {
+  id            Int        @id @default(autoincrement())
+  name          String
+  phone         String
+  email         String
+  address       String
+  houseSize     Float
+  floors        Int
+  heatingSystem String
+  message       String?    @db.Text
+  imageUrl      String?
+  status        LeadStatus @default(NEW)
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  bookings Booking[]
+
+  @@map("leads")
+}
+
+model Booking {
+  id        Int         @id @default(autoincrement())
+  leadId    Int
+  date      DateTime
+  time      String
+  type      BookingType
+  notes     String?     @db.Text
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  lead Lead @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  job  Job?
+
+  @@map("bookings")
+}
+
+model Customer {
+  id        Int      @id @default(autoincrement())
+  name      String
+  phone     String
+  email     String   @unique
+  address   String
+  notes     String?  @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  jobs Job[]
+
+  @@map("customers")
+}
+
+model Job {
+  id            Int       @id @default(autoincrement())
+  customerId    Int
+  bookingId     Int?      @unique
+  technician    String?
+  status        JobStatus @default(PENDING)
+  scheduledDate DateTime?
+  notes         String?   @db.Text
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  booking  Booking? @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+
+  @@map("jobs")
+}
+
+model Product {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String   @db.Text
+  price       Float
+  imageUrl    String?
+  brand       String?
+  featured    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("products")
+}
